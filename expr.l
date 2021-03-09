@@ -8,17 +8,20 @@
   #include <cstring>
   #include "tokens.h"
   #define YY_DECL int yylex(Expr::Parser::semantic_type *yylval)
+  #define yyterminate() return Expr::Parser::token::Tk_EOF
 
   using Token = Expr::Parser::token;
 %}
 
-%x bcomment
+%x LINE_COMMENT
+%x BLOCK_COMMENT
 
 %%
 
-[ \t\r\n] { /* Skip Whitespaces */ }
-"//"[^\n]*\n { /* Line Comment */ }
-"/*" {BEGIN(bcomment);}
+[ \t]     { /* Skip Whitespaces */ }
+[\r?\n]   return Token::Tk_EOL;
+"//"      { BEGIN(LINE_COMMENT); }
+"/*"      { BEGIN(BLOCK_COMMENT); }
 
 "abrir"         return Token::Kw_Abrir;
 "archivo"       return Token::Kw_Archivo;
@@ -65,36 +68,40 @@
 "verdadero"     return Token::Kw_Verdadero;
 "y"             return Token::Kw_Y;
 
-[\[]  return Token::Tk_OpenBracket;
-[\]]  return Token::Tk_CloseBracket;
-[(]   return Token::Tk_OpenPar;
-[)]   return Token::Tk_ClosePar;
-[,]   return Token::Tk_Comma;
-[:]   return Token::Tk_Colon;
+"\["  return Token::Tk_OpenBracket;
+"\]"  return Token::Tk_CloseBracket;
+"("   return Token::Tk_OpenPar;
+")"   return Token::Tk_ClosePar;
+","   return Token::Tk_Comma;
+":"   return Token::Tk_Colon;
 
-[<-]  return Token::Op_Assign;
-[==]  return Token::Op_Equal;
-[<>]  return Token::Op_NotEqual;
-[<=]  return Token::Op_LessThanEq;
-[>=]  return Token::Op_GreaterThanEq;
-[+]   return Token::Op_Add;
-[-]   return Token::Op_Sub;
-[\^]  return Token::Op_Pow;
-[*]   return Token::Op_Mul;
-[<]   return Token::Op_LessThan;
-[>]   return Token::Op_GreaterThan;
+"<-"  return Token::Op_Assign;
+"<>"  return Token::Op_NotEqual;
+"<="  return Token::Op_LessThanEq;
+">="  return Token::Op_GreaterThanEq;
+"="   return Token::Op_Equal;
+"+"   return Token::Op_Add;
+"-"   return Token::Op_Sub;
+"\^"  return Token::Op_Pow;
+"*"   return Token::Op_Mul;
+"<"   return Token::Op_LessThan;
+">"   return Token::Op_GreaterThan;
 
-[_a-zA-Z][_a-zA-Z0-9]*  { yylval->emplace<std::string>(yytext, yyleng); return Token::Tk_ID; }
-[0-9]+                  { yylval->emplace<int>(atoi(yytext)); return Token::Tk_IntConstant; }
-"0x"[0-9A-Fa-f]+        { yylval.emplace<int>(std::stol(yytext, nullptr, 0)); return token::Tk_HexConstant; }
-"0b"[0-1]+              { yylval.emplace<int>(std::stol(yytext, nullptr, 0)); return token::Tk_BinConstant; }
-\"[^\n]+\"              { yylval->emplace<std::string>(yytext, yyleng);return Token::Tk_StringConstant; }
-"'"[^\n]"'"|"'"[\\n]"'"|"'"[\\t]"'"|"'"[\\r]"'"|"'"[\\]"'"|"'"[\\"]"'"  { 
-                          yylval.emplace<char>(yytext, yyleng); return token::Tk_CharConstant; }
-. std::cout << "Invalid symbol " << yytext << std::endl;
+[_a-zA-Z][_a-zA-Z0-9]*              return Token::Tk_ID;
+[0-9]+|"0x"[0-9A-Fa-f]+|"0b"[0-1]+  return Token::Tk_IntConstant;
+\"[^"(\r?\n)]*\"                    return Token::Tk_StringConstant;
+\'[^"(\r?\n')]*\'                   return Token::Tk_CharConstant;
 
-<bcomment>"*/" { BEGIN(INITIAL); }
-<bcomment>.|\n { /* Nothing */}
-<bcomment><<EOF>> { std::cout << "Error no cerró comentario" << '\n'; }
+.     return Token::Tk_Unknown;
+
+<LINE_COMMENT>.           { /* Nothing */}
+<LINE_COMMENT>\r?\n       { BEGIN(INITIAL); return Token::Tk_EOL;}
+<LINE_COMMENT><<EOF>>     yyterminate();
+
+<BLOCK_COMMENT>"*/"       { BEGIN(INITIAL); }
+<BLOCK_COMMENT>(.|\r?\n)  { /* Nothing */}
+<BLOCK_COMMENT><<EOF>>    { std::cout << "Unclosed block comment." << std::endl; yyterminate();}
+
+<<EOF>> yyterminate();
 
 %%
