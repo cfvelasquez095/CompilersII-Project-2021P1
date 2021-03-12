@@ -36,6 +36,7 @@
 "div"           return Token::Kw_Div;
 "entero"        return Token::Kw_Entero;
 "entonces"      return Token::Kw_Entonces;
+"es"            return Token::Kw_Es;
 "escriba"       return Token::Kw_Escriba;
 "escribir"      return Token::Kw_Escribir;
 "escritura"     return Token::Kw_Escritura;
