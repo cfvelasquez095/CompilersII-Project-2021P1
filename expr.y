@@ -4,7 +4,6 @@
 %define api.value.type variant
 %define api.parser.class {Parser}
 %define api.namespace {Expr}
-%parse-param { std::unordered_map<std::string, double>& vars }
 
 %code requires {
 
@@ -43,6 +42,7 @@ int yylex(Expr::Parser::semantic_type *yylval);
 %token Kw_Div           "div"
 %token Kw_Entero        "entero"
 %token Kw_Entonces      "entonces"
+%token Kw_Es            "es"
 %token Kw_Escriba       "escriba"
 %token Kw_Escribir      "escribir"
 %token Kw_Escritura     "escritura"
@@ -105,7 +105,181 @@ int yylex(Expr::Parser::semantic_type *yylval);
 
 %%
 
-input:
-;
+PROGRAM: SUBTYPES-SEC OPT_EOL VARIABLE-SEC OPT_EOL SUBPROGRAM-DECL "inicio" OPT_EOL STATEMENTS OPT_EOL FIN OPT_EOL { std::cout << "Excellent grammar!" << std::endl; }
+    ;
+
+SUBTYPES-SEC: SUBTYPE-DECL
+    ;
+
+SUBTYPE-DECL: SUBTYPE-DECL "tipo" Tk_ID "es" TYPE Tk_EOL
+    |
+    ;
+
+TYPE: "entero"
+    | "booleano"
+    | "caracter"
+    | ARRAY-TYPE
+    ;
+
+ARRAY-TYPE: "arreglo" "[" Tk_IntConstant "]" "de" TYPE
+    ;
+
+VARIABLE-SEC: VARIABLE-DECL
+    ;
+
+VARIABLE-DECL: VARIABLE-DECL TYPE ID_1 Tk_EOL
+    |
+    ;
+
+ID_1: Tk_ID IDS
+    ;
+
+IDS: IDS "," Tk_ID
+    |
+    ;
+
+SUBPROGRAM-DECL: SUBPROGRAM-DECL SUBPROGRAM-HEADER Tk_EOL VARIABLE-SEC "inicio" OPT_EOL STATEMENTS "fin" OPT_EOL
+    |
+    ;
+
+SUBPROGRAM-HEADER: FUNC-HEADER
+    | PROC-HEADER
+    ;
+
+FUNC-HEADER: "funcion" Tk_ID ARGUMENT-DECLS ":" TYPE
+    ;
+
+PROC-HEADER: "procedimiento" Tk_ID ARGUMENT-DECLS
+    ;
+
+ARGUMENT-DECLS: "(" ARGUMENT-DECL ")"
+    |
+    ;
+
+ARGUMENT-DECL: "var" TYPE Tk_ID MORE_ARGUMENT
+    | TYPE Tk_ID MORE_ARGUMENT
+    ;
+
+MORE_ARGUMENT:  "," "var" Tk_ID
+    | "," TYPE Tk_ID
+    |
+    ;
+
+STATEMENTS: STATEMENTS STATEMENT Tk_EOL
+        |
+    ;
+
+STATEMENT: LVALUE "<-" EXPR
+    | "llamar" Tk_ID OPT_FUNC
+    | "escriba" ARGS
+    | "lea" LVALUE
+    | "retorne" OPT_EXPR
+    | SI_STMT
+    | "mientras" EXPR OPT_EOL "haga" Tk_EOL STATEMENT_1 "fin" "mientras"
+    | "repita" Tk_EOL STATEMENT_1 "hasta" EXPR
+    | "para" LVALUE "<-" EXPR "hasta" EXPR "haga" Tk_EOL STATEMENT_1 "fin" "para"
+    ;
+
+STATEMENT_1: STATEMENT Tk_EOL STATEMENTS
+    ;
+
+SI_STMT: "si" EXPR OPT_EOL "entonces" OPT_EOL STATEMENT_1 OPT_SINOSI "fin" "si"
+    ;
+
+OPT_SINOSI: "sino" OPT_SINOSI2
+    |
+    ;
+
+OPT_SINOSI2: "si" EXPR OPT_EOL "entonces" OPT_EOL STATEMENT_1 OPT_SINOSI
+    | OPT_EOL STATEMENT_1
+    ;
+
+LVALUE: Tk_ID LVALUE_p
+    ;
+
+LVALUE_p: "[" EXPR "]"
+    |
+    ;
+
+OPT_FUNC: "(" OPT_EXPRS ")"
+    |
+    ;
+
+OPT_EXPRS: OPT_EXPRS EXPR ","
+    | OPT_EXPRS EXPR
+    |
+    ;
+
+ARGS: ARG MORE_ARGS
+    ;
+
+MORE_ARGS: "," ARG MORE_ARGS
+    |
+    ;
+
+ARG: Tk_StringConstant
+    | EXPR
+    ;
+
+OPT_EXPR: EXPR
+    |
+    ;
+
+EXPR: TERM "=" EXPR
+    | TERM "<>" EXPR
+    | TERM "<=" EXPR
+    | TERM ">=" EXPR
+    | TERM "<" EXPR 
+    | TERM ">" EXPR 
+    | TERM
+    ;
+
+TERM: TERM "+" TERM2
+    | TERM "-" TERM2
+    | TERM "o" TERM2
+    | TERM2
+    ;
+
+TERM2: TERM2 "*" TERM3
+    | TERM2 "div" TERM3
+    | TERM2 "mod" TERM3
+    | TERM2 "y" TERM3
+    | TERM3
+    ;
+
+TERM3: TERM3 "^" TERM4
+    | TERM4
+    ;
+
+TERM4: "no" FACTOR
+    | "-" FACTOR
+    | FACTOR
+    ;
+
+FACTOR: Tk_IntConstant
+    | Tk_CharConstant
+    | BOOL
+    | "(" EXPR ")"
+    | RVALUE
+    ;
+
+RVALUE: Tk_ID RVALUE2
+    ;
+
+RVALUE2: "[" Tk_IntConstant "]"
+    | OPT_FUNC
+    ;
+
+OPT_EOL: OPT_EOL Tk_EOL
+    |
+    ;
+
+BOOL: "verdadero"
+    | "falso"
+    ;
+
+FIN: "fin" OPT_EOL
+    |"final" OPT_EOL
+    ;
 
 %%

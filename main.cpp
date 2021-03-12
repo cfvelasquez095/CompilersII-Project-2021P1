@@ -22,6 +22,7 @@ std::string TokenToString(Expr::Parser::token::yytokentype tk) {
         case Token::Kw_Div:             return "div";
         case Token::Kw_Entero:          return "entero";
         case Token::Kw_Entonces:        return "entonces";
+        case Token::Kw_Es:              return "es";
         case Token::Kw_Escriba:         return "escriba";
         case Token::Kw_Escribir:        return "escribir";
         case Token::Kw_Escritura:       return "escritura";
@@ -94,8 +95,18 @@ void ExecuteLexer() {
     }
 }
 
+void ExecuteParser() {
+    try {
+        Expr::Parser parser;
+        parser();
+    } catch(std::runtime_error&  ex) {
+        std::cout << ex.what() << std::endl;
+    }
+}
+
 int main() {
-    ExecuteLexer();
+    // ExecuteLexer();
+    ExecuteParser();
 
     return 0;
 }
