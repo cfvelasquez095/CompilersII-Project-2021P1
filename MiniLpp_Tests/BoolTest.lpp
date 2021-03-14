@@ -1,8 +1,0 @@
-Booleano x
-
-Inicio
-    x <- Verdadero
-    Escriba x
-    x <- Falso
-    Escriba x
-Fin

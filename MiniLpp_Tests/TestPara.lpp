@@ -1,8 +1,0 @@
-Entero i
-
-Inicio
-    Para i <- 1 Hasta 100 Haga
-        Escriba i
-    Fin Para
-    i <- 3 + 5
-Fin

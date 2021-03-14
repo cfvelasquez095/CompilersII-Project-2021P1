@@ -1,9 +1,0 @@
-Entero a
-
-Inicio
-    a <- 1
-    Repita
-        Escriba a
-        a <- a + 1
-    Hasta a > 100
-Fin
