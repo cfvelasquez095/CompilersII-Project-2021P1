@@ -101,7 +101,7 @@ int yylex(Expr::Parser::semantic_type *yylval);
 
 %token Tk_Unknown
 %token Tk_EOL
-%token Tk_EOF
+%token Tk_EOF 0 "end of file"
 
 %%
 
