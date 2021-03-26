@@ -104,7 +104,7 @@
 %token Tk_EOL
 %token Tk_EOF 0 "end of file"
 
-%type <Ast::Expr*> ARG ARGS ASSIGN BOOL EXPR FACTOR LVALUE MORE_ARGS STATEMENT STATEMENTS STATEMENT_1 TERM TERM2 TERM3 TERM4 TYPE VARIABLE_SEC VARIABLE_DECL
+%type <Ast::Expr*> ARG ARGS BOOL EXPR FACTOR LVALUE MORE_ARGS STATEMENT STATEMENTS STATEMENT_1 TERM TERM2 TERM3 TERM4 TYPE VARIABLE_SEC VARIABLE_DECL
 %type <id_list*> ID_1 IDS
 
 %right "<-"
@@ -127,42 +127,25 @@ SUBTYPE_DECL: SUBTYPE_DECL "tipo" Tk_ID "es" TYPE Tk_EOL
 
 TYPE: "entero" { $$ = new Ast::IntType(); }
     | "booleano" { $$ = new Ast::BoolType(); }
-    | "caracter" { $$ = new Ast::CharType(); }
+    | "caracter" { $$= new Ast::CharType(); }
     | ARRAY_TYPE
     ;
 
 ARRAY_TYPE: "arreglo" "[" Tk_IntConstant "]" "de" TYPE
     ;
 
-VARIABLE_SEC: VARIABLE_SEC OPT_EOL VARIABLE_DECL {
-            // $$ = $1;
-            // reinterpret_cast<Ast::VarSection*>($$)->varDeclarations.push_back($3);
-            // expr_list.push_back($3);
-        }
-    | VARIABLE_DECL {
-            // list temp; 
-            // temp.push_back($1);
-            // $$ = new Ast::VarSection(temp);
-            // expr_list.push_back($1);
-        }
+VARIABLE_SEC: VARIABLE_DECL
     ;
 
-VARIABLE_DECL: TYPE ID_1 Tk_EOL { $$ = new Ast::VarDeclaration($1,$2); }
-    | { $$ = nullptr; }
+VARIABLE_DECL: VARIABLE_DECL TYPE ID_1 Tk_EOL { $$ = new Ast::VarDeclaration($2,$3);}
+    |
     ;
 
-ID_1: Tk_ID IDS {
-            // id_list *temp= new std::vector<std::string>();
-            // temp->push_back($1);
-            // $$ = temp;
-        }
+ID_1: Tk_ID IDS
     ;
 
-IDS: IDS "," Tk_ID {
-            $$ = $1;
-            // reinterpret_cast<std::vector<std::string>*>($$)->push_back($3);
-        }
-    | { $$ = nullptr; }
+IDS: IDS "," Tk_ID
+    |
     ;
 
 SUBPROGRAM_DECL: SUBPROGRAM_DECL SUBPROGRAM_HEADER Tk_EOL VARIABLE_SEC "inicio" OPT_EOL STATEMENTS "fin" OPT_EOL
@@ -192,30 +175,22 @@ MORE_ARGUMENT:  "," "var" TYPE Tk_ID MORE_ARGUMENT
     |
     ;
 
-STATEMENTS: STATEMENTS OPT_EOL STATEMENT { $$ = $1; /*expr_list.push_back($3);*/ }
-    | STATEMENT { $$ = $1; /*expr_list.push_back($1);*/ }
+STATEMENTS: STATEMENTS STATEMENT OPT_EOL
+        |
     ;
 
-STATEMENT: ASSIGN { $$ = $1; }
+STATEMENT: LVALUE "<-" EXPR
     | "llamar" Tk_ID OPT_FUNC
-    | "escriba" ARGS { $$ = new Ast::PrintExpr($2); }
+    | "escriba" ARGS
     | "lea" LVALUE
     | "retorne" OPT_EXPR
     | SI_STMT
-    | "mientras" EXPR OPT_EOL "haga" Tk_EOL STATEMENT_1 "fin" "mientras" { $$ = new Ast::WhileStmt($2, $6); }
+    | "mientras" EXPR OPT_EOL "haga" Tk_EOL STATEMENT_1 "fin" "mientras"
     | "repita" Tk_EOL STATEMENT_1 "hasta" EXPR
     | "para" LVALUE "<-" EXPR "hasta" EXPR "haga" Tk_EOL STATEMENT_1 "fin" "para"
     ;
 
-STATEMENT_1: STATEMENT_1 OPT_EOL STATEMENT {
-            // $$ = $3;
-            // reinterpret_cast<Ast::ExprList*>($$)->exprList.push_back($1);
-        }
-    | STATEMENT {
-            // mult_expr_list e;
-            // e.push_back($1);
-            // $$ = new Ast::ExprList(e);
-        }
+STATEMENT_1: STATEMENT Tk_EOL STATEMENTS
     ;
 
 SI_STMT: "si" EXPR OPT_EOL "entonces" OPT_EOL STATEMENT_1 OPT_SINOSI "fin" "si"
@@ -228,8 +203,6 @@ OPT_SINOSI: "sino" OPT_SINOSI2
 OPT_SINOSI2: "si" EXPR OPT_EOL "entonces" OPT_EOL STATEMENT_1 OPT_SINOSI
     | OPT_EOL STATEMENT_1
     ;
-
-ASSIGN: Tk_ID "<-" EXPR { $$ = new Ast::AssignExpr($1, $3); }
 
 LVALUE: Tk_ID LVALUE_p { $$ = new Ast::IdentExpr($1); }
     ;
@@ -251,10 +224,10 @@ ARGS: ARG MORE_ARGS
     ;
 
 MORE_ARGS: "," ARG MORE_ARGS
-    | { $$ = nullptr; }
+    |
     ;
 
-ARG: Tk_StringConstant { $$ = new Ast::StringConst($1); }
+ARG: Tk_StringConstant { $$= new Ast::StringConst($1); }
     | EXPR
     ;
 
@@ -262,39 +235,39 @@ OPT_EXPR: EXPR
     |
     ;
 
-EXPR: TERM "=" EXPR { $$ = new Ast::EqualsExpr($1, $3); }
-    | TERM "<>" EXPR { $$ = new Ast::NotEqualsExpr($1, $3); }
-    | TERM "<=" EXPR { $$ = new Ast::LessThanEqExpr($1, $3); }
-    | TERM ">=" EXPR { $$ = new Ast::GreaterThanEqExpr($1, $3); }
-    | TERM "<" EXPR { $$ = new Ast::LessThanExpr($1, $3); }
-    | TERM ">" EXPR { $$ = new Ast::GreaterThanExpr($1, $3); }
+EXPR: TERM "=" EXPR { $$ = new Ast::EqualsExpr($1,$3); }
+    | TERM "<>" EXPR { $$ = new Ast::NotEqualsExpr($1,$3); }
+    | TERM "<=" EXPR { $$ = new Ast::LessThanEqExpr($1,$3); }
+    | TERM ">=" EXPR { $$ = new Ast::GreaterThanEqExpr($1,$3); }
+    | TERM "<" EXPR { $$ = new Ast::LessThanExpr($1,$3); }
+    | TERM ">" EXPR { $$ = new Ast::GreaterThanExpr($1,$3); }
     | TERM { $$ = $1; }
     ;
 
-TERM: TERM "+" TERM2 { $$ = new Ast::AddExpr($1, $3); }
-    | TERM "-" TERM2 { $$ = new Ast::SubExpr($1, $3); }
-    | TERM "o" TERM2 { $$ = new Ast::OrExpr($1, $3); }
+TERM: TERM "+" TERM2 { $$ = new Ast::AddExpr($1,$3); }
+    | TERM "-" TERM2 { $$ = new Ast::SubExpr($1,$3); }
+    | TERM "o" TERM2 { $$ = new Ast::OrExpr($1,$3); }
     | TERM2 { $$ = $1; }
     ;
 
-TERM2: TERM2 "*" TERM3 { $$ = new Ast::MultExpr($1, $3); }
-    | TERM2 "div" TERM3 { $$ = new Ast::DivExpr($1, $3); }
-    | TERM2 "mod" TERM3 { $$ = new Ast::ModExpr($1, $3); }
-    | TERM2 "y" TERM3 { $$ = new Ast::AndExpr($1, $3); }
+TERM2: TERM2 "*" TERM3 { $$ = new Ast::MultExpr($1,$3); }
+    | TERM2 "div" TERM3 { $$ = new Ast::DivExpr($1,$3); }
+    | TERM2 "mod" TERM3 { $$ = new Ast::ModExpr($1,$3); }
+    | TERM2 "y" TERM3 { $$ = new Ast::AndExpr($1,$3); }
     | TERM3 { $$ = $1; }
     ;
 
-TERM3: TERM3 "^" TERM4 { $$ = new Ast::PowExpr($1, $3); }
+TERM3: TERM3 "^" TERM4 { $$ = new Ast::PowExpr($1,$3); }
     | TERM4 { $$ = $1; }
     ;
 
-TERM4: "no" FACTOR { $$ = new Ast::NotExpr($2); }
-    | "-" FACTOR  %prec UMINUS { $$ = new Ast::UnaryExpr($2); }
+TERM4: "no" FACTOR {$$ = new Ast::UnaryExpr($2); }
+    | "-" FACTOR { $$ = new Ast::NotExpr($2); }
     | FACTOR { $$ = $1; }
     ;
 
-FACTOR: Tk_IntConstant { $$= new Ast::NumberExpr($1); }
-    | Tk_CharConstant { $$= new Ast::CharConst($1); }
+FACTOR: Tk_IntConstant { $$ = new Ast::NumberExpr($1); }
+    | Tk_CharConstant { $$ = new Ast::CharConst($1); }
     | BOOL
     | "(" EXPR ")" { $$ = $2; }
     | RVALUE
@@ -318,5 +291,6 @@ BOOL: "verdadero" { $$ = new Ast::TrueExpr(); }
 FIN: "fin" OPT_EOL
     |"final" OPT_EOL
     ;
+
 
 %%

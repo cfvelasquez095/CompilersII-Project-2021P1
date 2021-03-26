@@ -119,21 +119,21 @@ void ExecuteParser() {
 }
 
 int main(int argc, char * argv[]) {
-    // if (argc != 2)
-    // {
-    //     std::cerr << "Usage 1: " << argv[0] << " <input file>\n";
-    //     return 1;
-    // }
+    if (argc != 2)
+    {
+        std::cerr << "Usage 1: " << argv[0] << " <input file>\n";
+        return 1;
+    }
 
     std::ostringstream out;
 
-    // yyin = fopen(argv[1], "r");
+    yyin = fopen(argv[1], "r");
 
     ExecuteParser();
 
-    // for(auto &&i: expr_list){
-    //     Ast::genCode(i);
-    // }
+    for(auto &&i: expr_list){
+        Ast::genCode(i);
+    }
 
     out << "extern printf\n"
         << "global main\n\n"
@@ -142,34 +142,34 @@ int main(int argc, char * argv[]) {
         << "formatChar db '%c',0\n"
         << "formatString db '%s',0\n";
 
-    // for(int i = 0; i < temp_index; i++) {
-    //     out << "tmp" << std::to_string(i) << " dd 0\n";
-    // }
+    for(int i = 0; i < temp_index; i++) {
+        out << "tmp" << std::to_string(i) << " dd 0\n";
+    }
 
-    // for (int i = 0; i < char_index; i++) {
-    //     out << "charTmp" << std::to_string(i) << " db \"\"\n";
-    // }
+    for (int i = 0; i < char_index; i++) {
+        out << "charTmp" << std::to_string(i) << " db \"\"\n";
+    }
 
-    // for (int i = 0; i < string_index; i++) {
-    //     out << "stringTemp" << std::to_string(i) << ": db " + msg + ", 0\n";
-    // }
+    for (int i = 0; i < string_index; i++) {
+        out << "stringTemp" << std::to_string(i) << ": db " + msg + ", 0\n";
+    }
 
-    // for (auto &&i: variables) {
-    //     if(i.second == "Char"){
-    //         out << i.first << " db \"\"\n";
-    //     }
-    //     else
-    //     {
-    //         out << i.first << " dd 0 \n";
-    //     }
-    // }
+    for (auto &&i: variables) {
+        if(i.second == "Char"){
+            out << i.first << " db \"\"\n";
+        }
+        else
+        {
+            out << i.first << " dd 0 \n";
+        }
+    }
 
     out << "\nsection .text\n\n"
         << "main: \n";
 
-    // for (auto &&i: expr_list) {
-    //     out << i->code << "\n";
-    // }
+    for (auto &&i: expr_list) {
+        out << i->code << "\n";
+    }
 
     std::cout << out.str();
 

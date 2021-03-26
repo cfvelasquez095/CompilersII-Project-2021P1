@@ -49,16 +49,16 @@
         return "stringTemp" + std::to_string(string_index++) + ":";
     }
 
-    // std::string newVariable(std::string i, std::string datatype) {
-    //     variables.emplace(i, datatype);
-    //     return "dword [" + i + "]";
-    // }
+    std::string newVariable(std::string i, std::string datatype) {
+        variables.emplace(i, datatype);
+        return "dword [" + i + "]";
+    }
 %}
 
 %node Expr %abstract %typedef={
     %nocreate string_t code;
     %nocreate string_t place;
-    %nocreate int type;         // 0 = Int, 1 = Char, 2 = String
+    %nocreate int type;         // 1 = Int, 2 = Char, 3 = String
 } 
 %node BinaryExpr Expr %abstract  = {
     Expr * expr1;
@@ -170,125 +170,125 @@
 %operation void genCode(Expr *e)
 
 genCode(NumberExpr) {
-    // e->place = newTemp();
-    // e->code = "mov " + e->place + ", " + std::to_string(e->val);
-    // e->type = 1;
+    e->place = newTemp();
+    e->code = "mov " + e->place + ", " + std::to_string(e->val);
+    e->type = 1;
 }
 
 genCode(IdentExpr) {
-    // e->place = "dword[" + e->id + "]";
+    e->place = "dword[" + e->id + "]";
 
-    // if (variables[e->id] == "Char") {
-    //     e->type = 2;
-    // } else {
-    //     e->type = 1;
-    // }    
+    if (variables[e->id] == "Char") {
+        e->type = 2;
+    } else {
+        e->type = 1;
+    }    
 }
 
 genCode(TrueExpr) {
-    // e->place = newTemp();
-    // e->code = "mov " + e->place + ", 1";
-    // e->type = 1;
+    e->place = newTemp();
+    e->code = "mov " + e->place + ", 1";
+    e->type = 1;
 }
 
 genCode(FalseExpr) {
-    // e->place = newTemp();
-    // e->code = "mov " + e->place + ", 0";
-    // e->type = 1;
+    e->place = newTemp();
+    e->code = "mov " + e->place + ", 0";
+    e->type = 1;
 }
 
 genCode(CharConst) {
-    // e->place = newChar();
-    // e->code = "mov " + e->place + ", \"" + e->value + "\"";
-    // e->type = 2;
+    e->place = newChar();
+    e->code = "mov " + e->place + ", \"" + e->value + "\"";
+    e->type = 2;
 }
 
 genCode(StringConst) {
-    // e->place = newString();
-    // e->type = 3;
-    // msg = e->value;
+    e->place = newString();
+    e->type = 3;
+    msg = e->value;
 }
 
 genCode(IntType) {
-    // e->place = "Entero";
+    e->place = "Entero";
 }
 
 genCode(CharType) {
-    // e->place = "Char";
+    e->place = "Char";
 }
 
 genCode(StringType) {
-    // e->place = "String";
+    e->place = "String";
 }
 
 genCode(BoolType) {
-    // e->place = "Booleano";
+    e->place = "Booleano";
 }
 
 genCode(AddExpr) {
-    // genCode(e->expr1);
-    // genCode(e->expr2);
+    genCode(e->expr1);
+    genCode(e->expr2);
 
-    // e->place = e->expr1->place;
+    e->place = e->expr1->place;
 
-    // std::ostringstream out;
+    std::ostringstream out;
 
-    // out << e->expr1->code << '\n'
-    //     << e->expr2->code << '\n'
-    //     << "mov eax, " << e-> expr2->place << '\n'
-    //     << "add " << e->expr1->place << " , eax\n";
+    out << e->expr1->code << '\n'
+        << e->expr2->code << '\n'
+        << "mov eax, " << e-> expr2->place << '\n'
+        << "add " << e->expr1->place << " , eax\n";
 
-    // e->code= out.str();
+    e->code= out.str();
 }
 
 genCode(SubExpr) {
-    // genCode(e->expr1);
-    // genCode(e->expr2);
+    genCode(e->expr1);
+    genCode(e->expr2);
 
-    // e->place = e->expr1->place;
+    e->place = e->expr1->place;
 
-    // std::ostringstream out;
+    std::ostringstream out;
 
-    // out << e->expr1->code << '\n'
-    //     << e->expr2->code << '\n'
-    //     << "mov eax, " << e-> expr2->place << '\n'
-    //     << "sub " << e->expr1->place << " , eax\n";
+    out << e->expr1->code << '\n'
+        << e->expr2->code << '\n'
+        << "mov eax, " << e-> expr2->place << '\n'
+        << "sub " << e->expr1->place << " , eax\n";
 
-    // e->code= out.str();
+    e->code= out.str();
 }
 
 genCode(MultExpr) {
-    // genCode(e->expr1);
-    // genCode(e->expr2); 
-    // e->place = e->expr1->place;
+    genCode(e->expr1);
+    genCode(e->expr2); 
+    e->place = e->expr1->place;
 
-    // std::ostringstream out;
+    std::ostringstream out;
 
-    // out << e->expr1->code << '\n'
-    //     << e ->expr2->code << '\n'
-    //     << "mov eax , " << e->expr1->place << '\n'
-    //     << "mul " << e->expr2->place << '\n'
-    //     << "mov " << e->place << " ,eax\n";
+    out << e->expr1->code << '\n'
+        << e ->expr2->code << '\n'
+        << "mov eax , " << e->expr1->place << '\n'
+        << "mul " << e->expr2->place << '\n'
+        << "mov " << e->place << " ,eax\n";
 
-    // e->code= out.str();
+    e->code= out.str();
 }
 
 genCode(DivExpr) {
-    // genCode(e->expr1);
-    // genCode(e->expr2);
+    genCode(e->expr1);
+    genCode(e->expr2);
 
-    // e->place = e->expr1->place;
+    e->place = e->expr1->place;
 
-    // std::ostringstream out;
+    std::ostringstream out;
 
-    // out << e->expr1->code << '\n'
-    //     << e->expr2->code << '\n'
-    //     << "mov eax, " << e->expr1->place << '\n'
-    //     << "mov edx, " << "0" << '\n'
-    //     << "div " << e->expr2->place<< '\n'
-    //     << "mov " << e->place << " ,eax\n";
+    out << e->expr1->code << '\n'
+        << e->expr2->code << '\n'
+        << "mov eax, " << e->expr1->place << '\n'
+        << "mov edx, " << "0" << '\n'
+        << "div " << e->expr2->place<< '\n'
+        << "mov " << e->place << " ,eax\n";
 
-    // e->code= out.str();
+    e->code= out.str();
 }
 
 genCode(PowExpr) {
@@ -296,335 +296,335 @@ genCode(PowExpr) {
 }
 
 genCode(ModExpr) {
-    // genCode(e->expr1);
-    // genCode(e->expr2);
+    genCode(e->expr1);
+    genCode(e->expr2);
 
-    // e->place = e->expr1->place;
+    e->place = e->expr1->place;
 
-    // std::ostringstream out;
+    std::ostringstream out;
 
-    // out << e->expr1->code << '\n'
-    //     << e->expr2->code << '\n'
-    //     << "mov eax, " << e->expr1->place << '\n'
-    //     << "mov ebx, " << e->expr2->place << '\n'
-    //     << "cdq\n"
-    //     << "div ebx\n"
-    //     << "mov " << e->place << ", edx\n";
-    // e->code= out.str();
+    out << e->expr1->code << '\n'
+        << e->expr2->code << '\n'
+        << "mov eax, " << e->expr1->place << '\n'
+        << "mov ebx, " << e->expr2->place << '\n'
+        << "cdq\n"
+        << "div ebx\n"
+        << "mov " << e->place << ", edx\n";
+
+    e->code= out.str();
 }
 
 genCode(AndExpr) {
-    // genCode(e->expr1);
-    // genCode(e->expr2);
+    genCode(e->expr1);
+    genCode(e->expr2);
 
-    // e->place = newTemp();
+    e->place = newTemp();
 
-    // std::ostringstream out;
+    std::ostringstream out;
 
-    // out << e->expr1->code << '\n'
-    //     << e->expr2->code << '\n'
-    //     << "mov ecx, " << e->expr1->place << '\n'
-    //     << "xor eax, eax\n"
-    //     << "cmp 1, ecx\n"
-    //     << "sete al\n"
-    //     << "mov " << e->place << '\n'
-    //     << "xor eax, eax\n"
-    //     << "mov ecx, " << e->expr2->place << '\n'
-    //     << "cmp 1, ecx\n"
-    //     << "sete al\n"
-    //     << "cmp " << e->place << ", eax\n"
-    //     << "sete al\n"
-    //     << "mov " << e->place << ", eax\n";
+    out << e->expr1->code << '\n'
+        << e->expr2->code << '\n'
+        << "mov ecx, " << e->expr1->place << '\n'
+        << "xor eax, eax\n"
+        << "cmp 1, ecx\n"
+        << "sete al\n"
+        << "mov " << e->place << '\n'
+        << "xor eax, eax\n"
+        << "mov ecx, " << e->expr2->place << '\n'
+        << "cmp 1, ecx\n"
+        << "sete al\n"
+        << "cmp " << e->place << ", eax\n"
+        << "sete al\n"
+        << "mov " << e->place << ", eax\n";
         
-    // e->code= out.str();
+    e->code= out.str();
 }
 
 genCode(OrExpr) {
-    // genCode(e->expr1);
-    // genCode(e->expr2);
+    genCode(e->expr1);
+    genCode(e->expr2);
 
-    // e->place = newTemp();
+    e->place = newTemp();
 
-    // std::ostringstream out;
+    std::ostringstream out;
 
-    // out << e->expr1->code << '\n'
-    //     << e->expr2->code << '\n'
-    //     << "mov ecx, " << e->expr1->place << '\n'
-    //     << "mov " << e->place << '\n'
-    //     << "mov ecx, " << e->expr2->place << '\n'
-    //     << "or " << e->place << ", ecx\n";
+    out << e->expr1->code << '\n'
+        << e->expr2->code << '\n'
+        << "mov ecx, " << e->expr1->place << '\n'
+        << "mov " << e->place << '\n'
+        << "mov ecx, " << e->expr2->place << '\n'
+        << "or " << e->place << ", ecx\n";
 
-    // e->code= out.str();
+    e->code= out.str();
 }
 
 genCode(UnaryExpr) {
-    // genCode(e->expr);
+    genCode(e->expr);
 
-    // std::ostringstream out;
+    std::ostringstream out;
 
-    // out << "mov eax, " << e->expr->place << '\n'
-    //     << "imul eax, -1\n"
-    //     << "mov " << e->place << ", eax\n";
+    out << "mov eax, " << e->expr->place << '\n'
+        << "imul eax, -1\n"
+        << "mov " << e->place << ", eax\n";
     
-    // e->code = out.str();
+    e->code = out.str();
 }
 
 genCode(NotExpr) {
-    // genCode(e->expr);
+    genCode(e->expr);
 
-    // std::ostringstream out;
+    std::ostringstream out;
 
-    // out << "mov eax, " << e->expr->place << '\n'
-    //     << "mov " << e->place << ", eax\n"
-    //     << "not " << e->place << '\n';
+    out << "mov eax, " << e->expr->place << '\n'
+        << "mov " << e->place << ", eax\n"
+        << "not " << e->place << '\n';
 
-    // e->code = out.str();
+    e->code = out.str();
 }
 
 genCode(EqualsExpr) {
-    // genCode(e->expr1);
-    // genCode(e->expr2);
+    genCode(e->expr1);
+    genCode(e->expr2);
 
-    // e->place= e->expr1->place;
+    e->place= e->expr1->place;
 
-    // std::ostringstream out;
+    std::ostringstream out;
 
-    // out << e->expr1->code << '\n'
-    //     << e->expr2->code << '\n'
-    //     << "mov ecx, " << e->expr2->place << '\n'
-    //     << "xor eax, eax\n"
-    //     << "cmp " << e->expr1->place << " , ecx\n"
-    //     << "sete al\n"
-    //     << "mov "<< e->place << ", eax\n";
+    out << e->expr1->code << '\n'
+        << e->expr2->code << '\n'
+        << "mov ecx, " << e->expr2->place << '\n'
+        << "xor eax, eax\n"
+        << "cmp " << e->expr1->place << " , ecx\n"
+        << "sete al\n"
+        << "mov "<< e->place << ", eax\n";
 
-    // e->code = out.str();
+    e->code = out.str();
 }
 
 genCode(NotEqualsExpr) {
-    // genCode(e->expr1);
-    // genCode(e->expr2);
+    genCode(e->expr1);
+    genCode(e->expr2);
 
-    // e->place = newTemp();
+    e->place = newTemp();
 
-    // std::ostringstream out;
+    std::ostringstream out;
 
-    // out << e->expr1->code << '\n'
-    //     << e->expr2->code << '\n'
-    //     << "mov ecx, " << e->expr2->place << '\n'
-    //     << "xor eax, eax\n"
-    //     << "cmp " << e->expr1->place << " , ecx\n"
-    //     << "setne al\n"
-    //     << "mov " << e->place << ", eax\n";
+    out << e->expr1->code << '\n'
+        << e->expr2->code << '\n'
+        << "mov ecx, " << e->expr2->place << '\n'
+        << "xor eax, eax\n"
+        << "cmp " << e->expr1->place << " , ecx\n"
+        << "setne al\n"
+        << "mov " << e->place << ", eax\n";
 
-    // e->code = out.str();
+    e->code = out.str();
 }
 
 genCode(LessThanExpr) { 
-    // genCode(e->expr1);
-    // genCode(e->expr2);
+    genCode(e->expr1);
+    genCode(e->expr2);
 
-    // e->place = newTemp();
+    e->place = newTemp();
 
-    // std::ostringstream out;
+    std::ostringstream out;
 
-    // out << e->expr1->code << '\n'
-    //     << e->expr2->code << '\n'
-    //     << "mov ecx, " << e->expr2->place << '\n'
-    //     << "xor eax, eax\n"
-    //     << "cmp " << e->expr1->place << " , ecx\n"
-    //     << "setl al\n"
-    //     << "mov "<< e->place << ", eax\n";
+    out << e->expr1->code << '\n'
+        << e->expr2->code << '\n'
+        << "mov ecx, " << e->expr2->place << '\n'
+        << "xor eax, eax\n"
+        << "cmp " << e->expr1->place << " , ecx\n"
+        << "setl al\n"
+        << "mov "<< e->place << ", eax\n";
 
-    // e->code = out.str();
+    e->code = out.str();
 }
 
 genCode(LessThanEqExpr) { 
-    // genCode(e->expr1);
-    // genCode(e->expr2);
+    genCode(e->expr1);
+    genCode(e->expr2);
 
-    // e->place = newTemp();
+    e->place = newTemp();
 
-    // std::ostringstream out;
+    std::ostringstream out;
 
-    // out << e->expr1->code << '\n'
-    //     << e->expr2->code << '\n'
-    //     << "mov ecx, " << e->expr2->place << '\n'
-    //     << "xor eax, eax\n"
-    //     << "cmp " << e->expr1->place << " , ecx\n"
-    //     << "setle al\n"
-    //     << "mov "<< e->place << ", eax\n";
+    out << e->expr1->code << '\n'
+        << e->expr2->code << '\n'
+        << "mov ecx, " << e->expr2->place << '\n'
+        << "xor eax, eax\n"
+        << "cmp " << e->expr1->place << " , ecx\n"
+        << "setle al\n"
+        << "mov "<< e->place << ", eax\n";
 
-    // e->code = out.str();
+    e->code = out.str();
 }
 
 genCode(GreaterThanExpr) {
-    // genCode(e->expr1);
-    // genCode(e->expr2);
+    genCode(e->expr1);
+    genCode(e->expr2);
 
-    // e->place = newTemp();
+    e->place = newTemp();
 
-    // std::ostringstream out;
+    std::ostringstream out;
 
-    // out << e->expr1->code << '\n'
-    //     << e->expr2->code << '\n'
-    //     << "mov ecx, " << e->expr2->place << '\n'
-    //     << "xor eax, eax\n"
-    //     << "cmp " << e->expr1->place << " , ecx\n"
-    //     << "setg al\n"
-    //     << "mov "<< e->place << ", eax\n";
+    out << e->expr1->code << '\n'
+        << e->expr2->code << '\n'
+        << "mov ecx, " << e->expr2->place << '\n'
+        << "xor eax, eax\n"
+        << "cmp " << e->expr1->place << " , ecx\n"
+        << "setg al\n"
+        << "mov "<< e->place << ", eax\n";
 
-    // e->code = out.str();
+    e->code = out.str();
 }
 
 genCode(GreaterThanEqExpr) {
-    // genCode(e->expr1);
-    // genCode(e->expr2);
+    genCode(e->expr1);
+    genCode(e->expr2);
 
-    // e->place = newTemp();
+    e->place = newTemp();
 
-    // std::ostringstream out;
+    std::ostringstream out;
 
-    // out << e->expr1->code << '\n'
-    //     << e->expr2->code << '\n'
-    //     << "mov ecx, " << e->expr2->place << '\n'
-    //     << "xor eax, eax\n"
-    //     << "cmp " << e->expr1->place << " , ecx\n"
-    //     << "setge al\n"
-    //     << "mov "<< e->place << ", eax\n";
+    out << e->expr1->code << '\n'
+        << e->expr2->code << '\n'
+        << "mov ecx, " << e->expr2->place << '\n'
+        << "xor eax, eax\n"
+        << "cmp " << e->expr1->place << " , ecx\n"
+        << "setge al\n"
+        << "mov "<< e->place << ", eax\n";
 
-    // e->code = out.str();
+    e->code = out.str();
 }
 
 genCode(AssignExpr) {
-    // genCode(e->expr);
+    genCode(e->expr);
 
-    // std::ostringstream out;
-    // std::unordered_map<std::string, std::string>::const_iterator it = variables.find(e->id);
+    std::ostringstream out;
+    std::unordered_map<std::string, std::string>::const_iterator it = variables.find(e->id);
 
-    // if (it != variables.end()) {
-    //     e->place = "dword[" + e->id + "]";
-    // }
+    if (it != variables.end()) {
+        e->place = "dword[" + e->id + "]";
+    }
 
-    // out << e->expr->code << '\n'
-    //     << "mov eax, " + e->expr->place << '\n'
-    //     << "mov " + e->place + ", eax\n";
+    out << e->expr->code << '\n'
+        << "mov eax, " + e->expr->place << '\n'
+        << "mov " + e->place + ", eax\n";
 
-    // e->code = out.str();
+    e->code = out.str();
 
-    // if (variables[e->id] == "Char") {
-    //     e->type = 2;
-    // } else {
-    //     e->type = 1;
-    // }
-        
+    if (variables[e->id] == "Char") {
+        e->type = 2;
+    } else {
+        e->type = 1;
+    }
 }
 
 genCode(PrintExpr) {
-    // genCode(e->expr);
+    genCode(e->expr);
 
-    // std::ostringstream out;
+    std::ostringstream out;
 
-    // if(e->expr->type == 2) {
-    //     out << e->expr->code << '\n'
-    //         << "push " << e->expr->place << '\n'
-    //         << "push formatC\n"
-    //         << "call printf\n"
-    //         << "add esp, 8\n";
-    // } else if(e->expr->type == 3) {
-    //     out << e->expr->code << '\n'
-    //         << "push " << e->expr->place << '\n'
-    //         << "call printf\n"
-    //         << "add esp, 4\n";
-    // } else {
-    //     out << e->expr->code << '\n'
-    //         << "push " << e->expr->place << '\n'
-    //         << "push format\n"
-    //         << "call printf\n"
-    //         << "add esp, 8\n";
-    // }
+    if(e->expr->type == 2) {
+        out << e->expr->code << '\n'
+            << "push " << e->expr->place << '\n'
+            << "push formatC\n"
+            << "call printf\n"
+            << "add esp, 8\n";
+    } else if(e->expr->type == 3) {
+        out << e->expr->code << '\n'
+            << "push " << e->expr->place << '\n'
+            << "call printf\n"
+            << "add esp, 4\n";
+    } else {
+        out << e->expr->code << '\n'
+            << "push " << e->expr->place << '\n'
+            << "push format\n"
+            << "call printf\n"
+            << "add esp, 8\n";
+    }
 
-    // e->code = out.str();
+    e->code = out.str();
 }
 
 genCode(WhileStmt) {
-    // genCode(e->cond);
-    // genCode(e->block);
+    genCode(e->cond);
+    genCode(e->block);
 
-    // std::ostringstream out;
-    // std::string start_label = newLabel("start_while");
-    // std::string end_label = newLabel("end_while");
+    std::ostringstream out;
+    std::string start_label = newLabel("start_while");
+    std::string end_label = newLabel("end_while");
 
-    // out << start_label << ":\n"
-    //     << e->cond->code << '\n'
-    //     << "cmp " << e->cond->place << ", 0\n"
-    //     << "je " << end_label << '\n'
-    //     << e->block->code << '\n'
-    //     << "jmp " << start_label << '\n'
-    //     << end_label << ":\n";
+    out << start_label << ":\n"
+        << e->cond->code << '\n'
+        << "cmp " << e->cond->place << ", 0\n"
+        << "je " << end_label << '\n'
+        << e->block->code << '\n'
+        << "jmp " << start_label << '\n'
+        << end_label << ":\n";
 
-    // e->code = out.str();
+    e->code = out.str();
 }
 
 genCode(ExprList) {
-    // for (const auto &i: e->exprList) {
-    //     genCode(i);
-    //     e->place = i->place;
-    //     e->code = i->code;
-    //     e->type = i->type;
-    // }
+    for (const auto &i: e->exprList) {
+        genCode(i);
+        e->place = i->place;
+        e->code = i->code;
+        e->type = i->type;
+    }
 }
 
 genCode(IfStmt) {
-    // genCode(e->cond);
-    // genCode(e->true_block);
+    genCode(e->cond);
+    genCode(e->true_block);
 
-    // std::ostringstream out;
-    // std::string end_if_label = newLabel("end_if");
+    std::ostringstream out;
+    std::string end_if_label = newLabel("end_if");
 
-    // if (e->false_block != nullptr) {
-    //     genCode(e->false_block);
+    if (e->false_block != nullptr) {
+        genCode(e->false_block);
         
-    //     std::string else_label = newLabel("else_label");
+        std::string else_label = newLabel("else_label");
 
-    //     out << e->cond->code << '\n'
-    //         << "cmp " << e->cond->place << '\n'
-    //         << "je " << else_label << '\n'
-    //         << e->true_block->code << '\n'
-    //         << "jmp " << end_if_label << '\n'
-    //         << else_label << ":\n"
-    //         << e->false_block->code << '\n'
-    //         << end_if_label << ":\n";
-    // } else {
-    //     out << e->cond->code << '\n'
-    //         << "cmp " << e->cond->place << ", 0\b"
-    //         << "je " << end_if_label << '\n'
-    //         << e->true_block->code << '\n'
-    //         << end_if_label << ":\n";
-    // }
+        out << e->cond->code << '\n'
+            << "cmp " << e->cond->place << '\n'
+            << "je " << else_label << '\n'
+            << e->true_block->code << '\n'
+            << "jmp " << end_if_label << '\n'
+            << else_label << ":\n"
+            << e->false_block->code << '\n'
+            << end_if_label << ":\n";
+    } else {
+        out << e->cond->code << '\n'
+            << "cmp " << e->cond->place << ", 0\b"
+            << "je " << end_if_label << '\n'
+            << e->true_block->code << '\n'
+            << end_if_label << ":\n";
+    }
 
-    // e->code = out.str();
+    e->code = out.str();
 }
 
 genCode(VarDeclaration) {
-    // genCode(e->var_type);
+    genCode(e->var_type);
 
-    // std::string type = e->var_type->place;
+    std::string type = e->var_type->place;
     
-    // for (const auto &id: *e->id) {
-    //     newVariable(id, type);
-    // }
+    for (const auto &id: *e->id) {
+        newVariable(id, type);
+    }
 
-    // if (type == "Char") {
-    //     e->type = 2;
-    // } else {
-    //     e->type = 1;
-    // } 
+    if (type == "Char") {
+        e->type = 2;
+    } else {
+        e->type = 1;
+    } 
 }
 
 genCode(VarSection) {
-    // for (const auto &i: e->varDeclarations) {
-    //     genCode(i);
-    // }
+    for (const auto &i: e->varDeclarations) {
+        genCode(i);
+    }
 }
 
 genCode(ForStmt) {
