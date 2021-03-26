@@ -558,7 +558,7 @@ genCode(PrintExpr) {
     if(e->expr->type == 2) {
         out << e->expr->code << '\n'
             << "push " << e->expr->place << '\n'
-            << "push formatC\n"
+            << "push formatChar\n"
             << "call printf\n"
             << "add esp, 8\n";
     } else if(e->expr->type == 3) {
