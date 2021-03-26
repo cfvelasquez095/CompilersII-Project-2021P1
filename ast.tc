@@ -46,7 +46,7 @@
     int string_index = 0;
     std::string newString()
     {
-        return "stringTemp" + std::to_string(string_index++) + ":";
+        return "stringTemp" + std::to_string(string_index++);
     }
 
     std::string newVariable(std::string i, std::string datatype) {
@@ -126,7 +126,7 @@
 }
 
 %node VarSection Expr = {
-    mult_expr_list varDeclarations;
+    list varDeclarations;
 }
 
 %node AssignExpr Expr = {
@@ -135,7 +135,7 @@
 }
 
 %node ExprList Expr = {
-    mult_expr_list exprList;
+    list exprList;
 }
 
 %node PrintExpr Expr= {
@@ -183,6 +183,37 @@ genCode(IdentExpr) {
     } else {
         e->type = 1;
     }    
+}
+
+genCode(ExprList) {
+    for (const auto &i: e->exprList) {
+        genCode(i);
+        e->place = i->place;
+        e->code = i->code;
+        e->type = i->type;
+    }
+}
+
+genCode(VarDeclaration) {
+    genCode(e->var_type);
+
+    std::string type = e->var_type->place;
+    
+    for (const auto &id: *e->id) {
+        newVariable(id, type);
+    }
+
+    if (type == "Char") {
+        e->type = 2;
+    } else {
+        e->type = 1;
+    } 
+}
+
+genCode(VarSection) {
+    for (const auto &i: e->varDeclarations) {
+        genCode(i);
+    }
 }
 
 genCode(TrueExpr) {
@@ -546,34 +577,6 @@ genCode(PrintExpr) {
     e->code = out.str();
 }
 
-genCode(WhileStmt) {
-    genCode(e->cond);
-    genCode(e->block);
-
-    std::ostringstream out;
-    std::string start_label = newLabel("start_while");
-    std::string end_label = newLabel("end_while");
-
-    out << start_label << ":\n"
-        << e->cond->code << '\n'
-        << "cmp " << e->cond->place << ", 0\n"
-        << "je " << end_label << '\n'
-        << e->block->code << '\n'
-        << "jmp " << start_label << '\n'
-        << end_label << ":\n";
-
-    e->code = out.str();
-}
-
-genCode(ExprList) {
-    for (const auto &i: e->exprList) {
-        genCode(i);
-        e->place = i->place;
-        e->code = i->code;
-        e->type = i->type;
-    }
-}
-
 genCode(IfStmt) {
     genCode(e->cond);
     genCode(e->true_block);
@@ -605,26 +608,23 @@ genCode(IfStmt) {
     e->code = out.str();
 }
 
-genCode(VarDeclaration) {
-    genCode(e->var_type);
+genCode(WhileStmt) {
+    genCode(e->cond);
+    genCode(e->block);
 
-    std::string type = e->var_type->place;
-    
-    for (const auto &id: *e->id) {
-        newVariable(id, type);
-    }
+    std::ostringstream out;
+    std::string start_label = newLabel("start_while");
+    std::string end_label = newLabel("end_while");
 
-    if (type == "Char") {
-        e->type = 2;
-    } else {
-        e->type = 1;
-    } 
-}
+    out << start_label << ":\n"
+        << e->cond->code << '\n'
+        << "cmp " << e->cond->place << ", 0\n"
+        << "je " << end_label << '\n'
+        << e->block->code << '\n'
+        << "jmp " << start_label << '\n'
+        << end_label << ":\n";
 
-genCode(VarSection) {
-    for (const auto &i: e->varDeclarations) {
-        genCode(i);
-    }
+    e->code = out.str();
 }
 
 genCode(ForStmt) {

@@ -142,12 +142,12 @@ int main(int argc, char * argv[]) {
         << "formatChar db '%c',0\n"
         << "formatString db '%s',0\n";
 
-    for(int i = 0; i < temp_index; i++) {
-        out << "tmp" << std::to_string(i) << " dd 0\n";
+    for (int i = 0; i < temp_index; i++) {
+        out << "temp" << std::to_string(i) << " dd 0\n";
     }
 
     for (int i = 0; i < char_index; i++) {
-        out << "charTmp" << std::to_string(i) << " db \"\"\n";
+        out << "charTemp" << std::to_string(i) << " db \"\"\n";
     }
 
     for (int i = 0; i < string_index; i++) {
@@ -160,7 +160,7 @@ int main(int argc, char * argv[]) {
         }
         else
         {
-            out << i.first << " dd 0 \n";
+            out << i.first << " dd 0\n";
         }
     }
 
