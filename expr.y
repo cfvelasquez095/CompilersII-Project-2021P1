@@ -20,8 +20,11 @@
     #include "ast.h"
     #include "tokens.h"
 
+    extern int yylineno;
+
     namespace Expr {
         void Parser::error(const std::string &msg) {
+            std::cout<<"linea:" << yylineno << " " << msg << std::endl;
             throw std::runtime_error(msg);
         }
     }
@@ -192,9 +195,9 @@ MORE_ARGUMENT:  "," "var" TYPE Tk_ID MORE_ARGUMENT
     |
     ;
 
-STATEMENTS: STATEMENTS OPT_EOL STATEMENT{
-            // $$ = $1;
-            // expr_list.push_back($3);
+STATEMENTS: STATEMENTS OPT_EOL STATEMENT {
+            $$ = $1;
+            expr_list.push_back($3);
         }
     | STATEMENT {
             $$ = $1;
@@ -324,6 +327,5 @@ BOOL: "verdadero" { $$ = new Ast::TrueExpr(); }
 FIN: "fin" OPT_EOL
     |"final" OPT_EOL
     ;
-
 
 %%
