@@ -19,9 +19,12 @@
 #include <unordered_map>
 #include "tokens.h"
 
+extern int yylineno;
+
 namespace Expr {
     void Parser::error(const std::string &msg) {
-        throw std::runtime_error(msg);
+        std::cout<<"linea:" << yylineno << " " << msg << std::endl;
+        // throw std::runtime_error(msg);
     }
 }
 
@@ -180,7 +183,7 @@ STATEMENT: LVALUE "<-" EXPR
     | "para" LVALUE "<-" EXPR "hasta" EXPR "haga" Tk_EOL STATEMENT_1 "fin" "para"
     ;
 
-STATEMENT_1: STATEMENT Tk_EOL STATEMENTS
+STATEMENT_1: STATEMENT OPT_EOL STATEMENTS
     ;
 
 SI_STMT: "si" EXPR OPT_EOL "entonces" OPT_EOL STATEMENT_1 OPT_SINOSI "fin" "si"
@@ -266,7 +269,7 @@ FACTOR: Tk_IntConstant
 RVALUE: Tk_ID RVALUE2
     ;
 
-RVALUE2: "[" Tk_IntConstant "]"
+RVALUE2: "[" EXPR "]"
     | OPT_FUNC
     ;
 
