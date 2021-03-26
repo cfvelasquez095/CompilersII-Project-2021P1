@@ -4,29 +4,30 @@
 %define api.value.type variant
 %define api.parser.class {Parser}
 %define api.namespace {Expr}
+%parse-param {list &expr_list}
 
 %code requires {
-
-#include <string>
-#include <unordered_map>
-
+    #include <string>
+    #include <unordered_map>
+    #include "ast.h"
 }
 
 %{
-#include <iostream>
-#include <stdexcept>
-#include <string>
-#include <unordered_map>
-#include "tokens.h"
+    #include <iostream>
+    #include <stdexcept>
+    #include <string>
+    #include <unordered_map>
+    #include <vector>
+    #include "ast.h"
+    #include "tokens.h"
 
-namespace Expr {
-    void Parser::error(const std::string &msg) {
-        throw std::runtime_error(msg);
+    namespace Expr {
+        void Parser::error(const std::string &msg) {
+            throw std::runtime_error(msg);
+        }
     }
-}
 
-int yylex(Expr::Parser::semantic_type *yylval);
-
+    int yylex(Expr::Parser::semantic_type *yylval);
 %}
 
 %token Kw_Abrir         "abrir"
@@ -94,7 +95,7 @@ int yylex(Expr::Parser::semantic_type *yylval);
 %token Op_LessThan      "<"
 %token Op_GreaterThan   ">"
 
-%token<char> Tk_CharConstant
+%token<std::string> Tk_CharConstant
 %token<std::string> Tk_ID
 %token<std::string> Tk_StringConstant
 %token<int> Tk_IntConstant
@@ -102,6 +103,15 @@ int yylex(Expr::Parser::semantic_type *yylval);
 %token Tk_Unknown
 %token Tk_EOL
 %token Tk_EOF 0 "end of file"
+
+%type <Ast::Expr*> ARG ARGS ASSIGN BOOL EXPR FACTOR LVALUE MORE_ARGS STATEMENT STATEMENTS STATEMENT_1 TERM TERM2 TERM3 TERM4 TYPE VARIABLE_SEC VARIABLE_DECL
+%type <id_list*> ID_1 IDS
+
+%right "<-"
+%left '=' "<>" '<' '>' "<=" ">="
+%left '+' '-'
+%left '*' '/'
+%nonassoc '|' UMINUS
 
 %%
 
@@ -115,27 +125,44 @@ SUBTYPE_DECL: SUBTYPE_DECL "tipo" Tk_ID "es" TYPE Tk_EOL
     |
     ;
 
-TYPE: "entero"
-    | "booleano"
-    | "caracter"
+TYPE: "entero" { $$ = new Ast::IntType(); }
+    | "booleano" { $$ = new Ast::BoolType(); }
+    | "caracter" { $$ = new Ast::CharType(); }
     | ARRAY_TYPE
     ;
 
 ARRAY_TYPE: "arreglo" "[" Tk_IntConstant "]" "de" TYPE
     ;
 
-VARIABLE_SEC: VARIABLE_DECL
+VARIABLE_SEC: VARIABLE_SEC OPT_EOL VARIABLE_DECL {
+            // $$ = $1;
+            // reinterpret_cast<Ast::VarSection*>($$)->varDeclarations.push_back($3);
+            // expr_list.push_back($3);
+        }
+    | VARIABLE_DECL {
+            // list temp; 
+            // temp.push_back($1);
+            // $$ = new Ast::VarSection(temp);
+            // expr_list.push_back($1);
+        }
     ;
 
-VARIABLE_DECL: VARIABLE_DECL TYPE ID_1 Tk_EOL
-    |
+VARIABLE_DECL: TYPE ID_1 Tk_EOL { $$ = new Ast::VarDeclaration($1,$2); }
+    | { $$ = nullptr; }
     ;
 
-ID_1: Tk_ID IDS
+ID_1: Tk_ID IDS {
+            // id_list *temp= new std::vector<std::string>();
+            // temp->push_back($1);
+            // $$ = temp;
+        }
     ;
 
-IDS: IDS "," Tk_ID
-    |
+IDS: IDS "," Tk_ID {
+            $$ = $1;
+            // reinterpret_cast<std::vector<std::string>*>($$)->push_back($3);
+        }
+    | { $$ = nullptr; }
     ;
 
 SUBPROGRAM_DECL: SUBPROGRAM_DECL SUBPROGRAM_HEADER Tk_EOL VARIABLE_SEC "inicio" OPT_EOL STATEMENTS "fin" OPT_EOL
@@ -165,22 +192,30 @@ MORE_ARGUMENT:  "," "var" TYPE Tk_ID MORE_ARGUMENT
     |
     ;
 
-STATEMENTS: STATEMENTS STATEMENT OPT_EOL
-        |
+STATEMENTS: STATEMENTS OPT_EOL STATEMENT { $$ = $1; /*expr_list.push_back($3);*/ }
+    | STATEMENT { $$ = $1; /*expr_list.push_back($1);*/ }
     ;
 
-STATEMENT: LVALUE "<-" EXPR
+STATEMENT: ASSIGN { $$ = $1; }
     | "llamar" Tk_ID OPT_FUNC
-    | "escriba" ARGS
+    | "escriba" ARGS { $$ = new Ast::PrintExpr($2); }
     | "lea" LVALUE
     | "retorne" OPT_EXPR
     | SI_STMT
-    | "mientras" EXPR OPT_EOL "haga" Tk_EOL STATEMENT_1 "fin" "mientras"
+    | "mientras" EXPR OPT_EOL "haga" Tk_EOL STATEMENT_1 "fin" "mientras" { $$ = new Ast::WhileStmt($2, $6); }
     | "repita" Tk_EOL STATEMENT_1 "hasta" EXPR
     | "para" LVALUE "<-" EXPR "hasta" EXPR "haga" Tk_EOL STATEMENT_1 "fin" "para"
     ;
 
-STATEMENT_1: STATEMENT Tk_EOL STATEMENTS
+STATEMENT_1: STATEMENT_1 OPT_EOL STATEMENT {
+            // $$ = $3;
+            // reinterpret_cast<Ast::ExprList*>($$)->exprList.push_back($1);
+        }
+    | STATEMENT {
+            // mult_expr_list e;
+            // e.push_back($1);
+            // $$ = new Ast::ExprList(e);
+        }
     ;
 
 SI_STMT: "si" EXPR OPT_EOL "entonces" OPT_EOL STATEMENT_1 OPT_SINOSI "fin" "si"
@@ -194,7 +229,9 @@ OPT_SINOSI2: "si" EXPR OPT_EOL "entonces" OPT_EOL STATEMENT_1 OPT_SINOSI
     | OPT_EOL STATEMENT_1
     ;
 
-LVALUE: Tk_ID LVALUE_p
+ASSIGN: Tk_ID "<-" EXPR { $$ = new Ast::AssignExpr($1, $3); }
+
+LVALUE: Tk_ID LVALUE_p { $$ = new Ast::IdentExpr($1); }
     ;
 
 LVALUE_p: "[" EXPR "]"
@@ -214,10 +251,10 @@ ARGS: ARG MORE_ARGS
     ;
 
 MORE_ARGS: "," ARG MORE_ARGS
-    |
+    | { $$ = nullptr; }
     ;
 
-ARG: Tk_StringConstant
+ARG: Tk_StringConstant { $$ = new Ast::StringConst($1); }
     | EXPR
     ;
 
@@ -225,41 +262,41 @@ OPT_EXPR: EXPR
     |
     ;
 
-EXPR: TERM "=" EXPR
-    | TERM "<>" EXPR
-    | TERM "<=" EXPR
-    | TERM ">=" EXPR
-    | TERM "<" EXPR 
-    | TERM ">" EXPR 
-    | TERM
+EXPR: TERM "=" EXPR { $$ = new Ast::EqualsExpr($1, $3); }
+    | TERM "<>" EXPR { $$ = new Ast::NotEqualsExpr($1, $3); }
+    | TERM "<=" EXPR { $$ = new Ast::LessThanEqExpr($1, $3); }
+    | TERM ">=" EXPR { $$ = new Ast::GreaterThanEqExpr($1, $3); }
+    | TERM "<" EXPR { $$ = new Ast::LessThanExpr($1, $3); }
+    | TERM ">" EXPR { $$ = new Ast::GreaterThanExpr($1, $3); }
+    | TERM { $$ = $1; }
     ;
 
-TERM: TERM "+" TERM2
-    | TERM "-" TERM2
-    | TERM "o" TERM2
-    | TERM2
+TERM: TERM "+" TERM2 { $$ = new Ast::AddExpr($1, $3); }
+    | TERM "-" TERM2 { $$ = new Ast::SubExpr($1, $3); }
+    | TERM "o" TERM2 { $$ = new Ast::OrExpr($1, $3); }
+    | TERM2 { $$ = $1; }
     ;
 
-TERM2: TERM2 "*" TERM3
-    | TERM2 "div" TERM3
-    | TERM2 "mod" TERM3
-    | TERM2 "y" TERM3
-    | TERM3
+TERM2: TERM2 "*" TERM3 { $$ = new Ast::MultExpr($1, $3); }
+    | TERM2 "div" TERM3 { $$ = new Ast::DivExpr($1, $3); }
+    | TERM2 "mod" TERM3 { $$ = new Ast::ModExpr($1, $3); }
+    | TERM2 "y" TERM3 { $$ = new Ast::AndExpr($1, $3); }
+    | TERM3 { $$ = $1; }
     ;
 
-TERM3: TERM3 "^" TERM4
-    | TERM4
+TERM3: TERM3 "^" TERM4 { $$ = new Ast::PowExpr($1, $3); }
+    | TERM4 { $$ = $1; }
     ;
 
-TERM4: "no" FACTOR
-    | "-" FACTOR
-    | FACTOR
+TERM4: "no" FACTOR { $$ = new Ast::NotExpr($2); }
+    | "-" FACTOR  %prec UMINUS { $$ = new Ast::UnaryExpr($2); }
+    | FACTOR { $$ = $1; }
     ;
 
-FACTOR: Tk_IntConstant
-    | Tk_CharConstant
+FACTOR: Tk_IntConstant { $$= new Ast::NumberExpr($1); }
+    | Tk_CharConstant { $$= new Ast::CharConst($1); }
     | BOOL
-    | "(" EXPR ")"
+    | "(" EXPR ")" { $$ = $2; }
     | RVALUE
     ;
 
@@ -274,8 +311,8 @@ OPT_EOL: OPT_EOL Tk_EOL
     |
     ;
 
-BOOL: "verdadero"
-    | "falso"
+BOOL: "verdadero" { $$ = new Ast::TrueExpr(); }
+    | "falso" { $$ = new Ast::FalseExpr(); }
     ;
 
 FIN: "fin" OPT_EOL
