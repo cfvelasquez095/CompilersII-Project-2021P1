@@ -104,8 +104,8 @@
 %token Tk_EOL
 %token Tk_EOF 0 "end of file"
 
-%type <Ast::Expr*> ARG ARGS BOOL EXPR FACTOR LVALUE MORE_ARGS STATEMENT STATEMENTS STATEMENT_1 TERM TERM2 TERM3 TERM4 TYPE VARIABLE_SEC VARIABLE_DECL
-%type <id_list*> ID_1 IDS
+%type <Ast::Expr*> ARG ARGS ASSIGN BOOL EXPR FACTOR LVALUE MORE_ARGS STATEMENT STATEMENTS STATEMENT_1 TERM TERM2 TERM3 TERM4 TYPE VARIABLE_SEC VARIABLE_DECL
+%type <id_list*> ID_1
 
 %right "<-"
 %left '=' "<>" '<' '>' "<=" ">="
@@ -138,14 +138,19 @@ VARIABLE_SEC: VARIABLE_DECL
     ;
 
 VARIABLE_DECL: VARIABLE_DECL TYPE ID_1 Tk_EOL { $$ = new Ast::VarDeclaration($2,$3);}
-    |
+    | { $$ = nullptr; }
     ;
 
-ID_1: Tk_ID IDS
-    ;
-
-IDS: IDS "," Tk_ID
-    |
+ID_1: ID_1 "," Tk_ID {
+            $$ = $1;
+            reinterpret_cast<std::vector<std::string>*>($$)->push_back($3);
+        }
+    | Tk_ID {
+            id_list *temp= new std::vector<std::string>();
+            temp->push_back($1);
+            $$= temp;
+        }
+    | { $$ = nullptr; }
     ;
 
 SUBPROGRAM_DECL: SUBPROGRAM_DECL SUBPROGRAM_HEADER Tk_EOL VARIABLE_SEC "inicio" OPT_EOL STATEMENTS "fin" OPT_EOL
@@ -176,16 +181,16 @@ MORE_ARGUMENT:  "," "var" TYPE Tk_ID MORE_ARGUMENT
     ;
 
 STATEMENTS: STATEMENTS STATEMENT OPT_EOL
-        |
+        | { $$ = nullptr; }
     ;
 
-STATEMENT: LVALUE "<-" EXPR
+STATEMENT: ASSIGN { $$ = $1; }
     | "llamar" Tk_ID OPT_FUNC
-    | "escriba" ARGS
+    | "escriba" ARGS { $$ = new Ast::PrintExpr($2); }
     | "lea" LVALUE
     | "retorne" OPT_EXPR
     | SI_STMT
-    | "mientras" EXPR OPT_EOL "haga" Tk_EOL STATEMENT_1 "fin" "mientras"
+    | "mientras" EXPR OPT_EOL "haga" Tk_EOL STATEMENT_1 "fin" "mientras" { $$ = new Ast::WhileStmt($2, $6); }
     | "repita" Tk_EOL STATEMENT_1 "hasta" EXPR
     | "para" LVALUE "<-" EXPR "hasta" EXPR "haga" Tk_EOL STATEMENT_1 "fin" "para"
     ;
@@ -203,6 +208,8 @@ OPT_SINOSI: "sino" OPT_SINOSI2
 OPT_SINOSI2: "si" EXPR OPT_EOL "entonces" OPT_EOL STATEMENT_1 OPT_SINOSI
     | OPT_EOL STATEMENT_1
     ;
+
+ASSIGN: Tk_ID "<-" EXPR { $$ = new Ast::AssignExpr($1,$3); }
 
 LVALUE: Tk_ID LVALUE_p { $$ = new Ast::IdentExpr($1); }
     ;
@@ -224,7 +231,7 @@ ARGS: ARG MORE_ARGS
     ;
 
 MORE_ARGS: "," ARG MORE_ARGS
-    |
+    | { $$ = nullptr; }
     ;
 
 ARG: Tk_StringConstant { $$= new Ast::StringConst($1); }
