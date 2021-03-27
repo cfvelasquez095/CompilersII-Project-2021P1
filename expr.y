@@ -24,8 +24,9 @@
 
     namespace Expr {
         void Parser::error(const std::string &msg) {
-            std::cout<<"linea:" << yylineno << " " << msg << std::endl;
+            std::cout<<"Error on line" << yylineno << ": " << msg << std::endl;
         }
+
     }
 
     int yylex(Expr::Parser::semantic_type *yylval);

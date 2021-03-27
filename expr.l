@@ -19,7 +19,8 @@
 %%
 
 [ \t]     { /* Skip Whitespaces */ }
-[\r?\n]   { yylineno++; return Token::Tk_EOL; }
+[\r?\n]   { yylineno++; return Token::Tk_EOL;}
+
 "//"      { BEGIN(LINE_COMMENT); }
 "/*"      { BEGIN(BLOCK_COMMENT); }
 
