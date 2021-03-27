@@ -34,7 +34,7 @@
     int label_index = 0;
     std::string newLabel(std::string label)
     {
-        return label + std::to_string(label_index++) + ":";
+        return label + std::to_string(label_index++);
     }
 
     int char_index = 0;
@@ -147,6 +147,11 @@
     Expr *block;
 }
 
+%node DoWhileStmt Expr = {
+    Expr *cond;
+    Expr *block;
+}
+
 %node IfStmt Expr = {
     Expr *cond;
     Expr *true_block;
@@ -189,7 +194,7 @@ genCode(ExprList) {
     for (const auto &i: e->exprList) {
         genCode(i);
         e->place = i->place;
-        e->code = i->code;
+        e->code += i->code;
         e->type = i->type;
     }
 }
@@ -627,6 +632,45 @@ genCode(WhileStmt) {
     e->code = out.str();
 }
 
-genCode(ForStmt) {
+genCode(DoWhileStmt) {
+    genCode(e->cond);
+    genCode(e->block);
 
+    std::ostringstream out;
+    std::string start_label = newLabel("start_dowhile");
+    std::string end_label = newLabel("end_dowhile");
+
+    out << start_label << ":\n"
+        << e->block->code << '\n'
+        << e->cond->code << '\n'
+        << "cmp " << e->cond->place << ", 1\n"
+        << "je " << end_label << '\n'
+        << "jmp " << start_label << '\n'
+        << end_label << ":\n";
+
+    e->code = out.str();
+}
+
+genCode(ForStmt) {
+    genCode(e->assign);
+    genCode(e->cond);
+    genCode(e->block);
+
+    std::string start_label = newLabel("start_for");
+    std::string end_label = newLabel("end_for");
+
+    std::ostringstream out;
+
+    out << e->assign->code << '\n'
+        << e->cond->code << '\n'
+        << start_label << ":\n"
+        << "mov edx, " << e->cond->place << '\n'
+        << "cmp " << e->assign->place << ", edx\n"
+        << "jg " << end_label << '\n'
+        << e->block->code << '\n'
+        << "inc " << e->assign->place << '\n'
+        << "jmp " << start_label << '\n'
+        << end_label << ":\n";
+
+    e->code= out.str();
 }

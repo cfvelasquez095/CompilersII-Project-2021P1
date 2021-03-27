@@ -25,7 +25,6 @@
     namespace Expr {
         void Parser::error(const std::string &msg) {
             std::cout<<"linea:" << yylineno << " " << msg << std::endl;
-            throw std::runtime_error(msg);
         }
     }
 
@@ -106,7 +105,7 @@
 %token Tk_EOL
 %token Tk_EOF 0 "end of file"
 
-%type <Ast::Expr*> ARG ARGS ASSIGN BOOL EXPR FACTOR LVALUE MORE_ARGS RVALUE STATEMENT STATEMENTS STATEMENT_1 TERM TERM2 TERM3 TERM4 TYPE VARIABLE_SEC VARIABLE_DECL
+%type <Ast::Expr*> ARG ARGS ASSIGN BOOL EXPR FACTOR LVALUE LVALUE_p MORE_ARGS RVALUE STATEMENT STATEMENTS STATEMENT_1 TERM TERM2 TERM3 TERM4 TYPE VARIABLE_SEC VARIABLE_DECL
 %type <id_list*> ID_1
 
 %right "<-"
@@ -168,7 +167,7 @@ ID_1: ID_1 "," Tk_ID {
     | { $$ = nullptr; }
     ;
 
-SUBPROGRAM_DECL: SUBPROGRAM_DECL SUBPROGRAM_HEADER Tk_EOL VARIABLE_SEC "inicio" OPT_EOL STATEMENTS "fin" OPT_EOL
+SUBPROGRAM_DECL: SUBPROGRAM_DECL SUBPROGRAM_HEADER Tk_EOL VARIABLE_SEC_OPT "inicio" OPT_EOL STATEMENTS "fin" OPT_EOL
     |
     ;
 
@@ -205,15 +204,15 @@ STATEMENTS: STATEMENTS OPT_EOL STATEMENT {
         }
     ;
 
-STATEMENT: ASSIGN { $$ = $1; }
+STATEMENT: ASSIGN { $$ = $1; }    
     | "llamar" Tk_ID OPT_FUNC
     | "escriba" ARGS { $$ = new Ast::PrintExpr($2); }
     | "lea" LVALUE
-    | "retorne" OPT_EXPR
+    | "retorne" OPT_EXPR Tk_EOL
     | SI_STMT
-    | "mientras" EXPR OPT_EOL "haga" Tk_EOL STATEMENT_1 "fin" "mientras" { $$ = new Ast::WhileStmt($2, $6); }
-    | "repita" Tk_EOL STATEMENT_1 "hasta" EXPR
-    | "para" LVALUE "<-" EXPR "hasta" EXPR "haga" Tk_EOL STATEMENT_1 "fin" "para"
+    | "mientras" EXPR OPT_EOL "haga" Tk_EOL STATEMENT_1 OPT_EOL "fin" "mientras" { $$ = new Ast::WhileStmt($2, $6); }
+    | "repita" Tk_EOL STATEMENT_1 OPT_EOL "hasta" EXPR { $$ = new Ast::DoWhileStmt($6, $3); }
+    | "para" ASSIGN "hasta" EXPR "haga" Tk_EOL STATEMENT_1 OPT_EOL "fin" "para" { $$= new Ast::ForStmt($2, $4, $7); }
     ;
 
 STATEMENT_1: STATEMENT_1 OPT_EOL STATEMENT {
@@ -227,14 +226,14 @@ STATEMENT_1: STATEMENT_1 OPT_EOL STATEMENT {
         }
     ;
 
-SI_STMT: "si" EXPR OPT_EOL "entonces" OPT_EOL STATEMENT_1 OPT_SINOSI "fin" "si"
+SI_STMT: "si" EXPR OPT_EOL "entonces" OPT_EOL STATEMENT_1 OPT_EOL OPT_SINOSI "fin" "si" Tk_EOL
     ;
 
 OPT_SINOSI: "sino" OPT_SINOSI2
     |
     ;
 
-OPT_SINOSI2: "si" EXPR OPT_EOL "entonces" OPT_EOL STATEMENT_1 OPT_SINOSI
+OPT_SINOSI2: "si" EXPR OPT_EOL "entonces" OPT_EOL STATEMENT_1 OPT_EOL OPT_SINOSI
     | OPT_EOL STATEMENT_1
     ;
 
@@ -243,8 +242,8 @@ ASSIGN: Tk_ID "<-" EXPR { $$ = new Ast::AssignExpr($1,$3); }
 LVALUE: Tk_ID LVALUE_p { $$ = new Ast::IdentExpr($1); }
     ;
 
-LVALUE_p: "[" EXPR "]"
-    |
+LVALUE_p: "[" EXPR "]" { $$ = $2; }
+    | { $$ = nullptr; }
     ;
 
 OPT_FUNC: "(" OPT_EXPRS ")"
@@ -259,12 +258,12 @@ OPT_EXPRS: OPT_EXPRS EXPR ","
 ARGS: ARG MORE_ARGS { $$ = $1; }
     ;
 
-MORE_ARGS: "," ARG MORE_ARGS
+MORE_ARGS: "," ARG MORE_ARGS { $$ = $2; }
     | { $$ = nullptr; }
     ;
 
 ARG: Tk_StringConstant { $$= new Ast::StringConst($1); }
-    | EXPR
+    | EXPR { $$ = $1; }
     ;
 
 OPT_EXPR: EXPR
@@ -312,7 +311,7 @@ FACTOR: Tk_IntConstant { $$ = new Ast::NumberExpr($1); }
 RVALUE: Tk_ID RVALUE2 { $$ = new Ast::IdentExpr($1); }
     ;
 
-RVALUE2: "[" Tk_IntConstant "]"
+RVALUE2: "[" EXPR "]"
     | OPT_FUNC
     ;
 
