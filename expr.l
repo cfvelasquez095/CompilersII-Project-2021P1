@@ -20,6 +20,7 @@
 
 [ \t]     { /* Skip Whitespaces */ }
 [\r?\n]   { yylineno++; return Token::Tk_EOL;}
+
 "//"      { BEGIN(LINE_COMMENT); }
 "/*"      { BEGIN(BLOCK_COMMENT); }
 
@@ -88,10 +89,11 @@
 "<"   return Token::Op_LessThan;
 ">"   return Token::Op_GreaterThan;
 
-[_a-zA-Z][_a-zA-Z0-9]*              return Token::Tk_ID;
-[0-9]+|"0x"[0-9A-Fa-f]+|"0b"[0-1]+  return Token::Tk_IntConstant;
-\"[^"(\r?\n)]*\"                    return Token::Tk_StringConstant;
-\'[^"(\r?\n')]*\'                   return Token::Tk_CharConstant;
+[_a-zA-Z][_a-zA-Z0-9]*              { yylval->emplace<std::string>(yytext,yyleng); return Token::Tk_ID; }
+[0-9]+|"0x"[0-9A-Fa-f]+|"0b"[0-1]+  { yylval->emplace<int>(atoi(yytext)); return Token::Tk_IntConstant; }
+\"[^"(\r?\n)]*\"                    { yylval->emplace<std::string>(yytext,yyleng); return Token::Tk_StringConstant; }
+\'[^"(\r?\n')]*\'                   { std::string temp(yytext); std::string val = temp.substr(1,1); 
+                                      yylval->emplace<std::string>(val); return Token::Tk_CharConstant;}
 
 .     return Token::Tk_Unknown;
 

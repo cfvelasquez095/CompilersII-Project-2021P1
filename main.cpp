@@ -1,9 +1,23 @@
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include "tokens.h"
 
 extern Expr::Parser::token_type yylex(Expr::Parser::semantic_type * yylval);
-extern char * yytext;
+
+extern std::unordered_map<std::string, std::string> variables;
+
+std::vector<Ast::Expr*> expr_list;
+
+extern std::string msg;
+
+extern char *yytext;
+extern int temp_index;
+extern int label_index;
+extern int char_index;
+extern int string_index;
+
+extern FILE *yyin;
 
 using Token = Expr::Parser::token;
 
@@ -97,16 +111,67 @@ void ExecuteLexer() {
 
 void ExecuteParser() {
     try {
-        Expr::Parser parser;
+        Expr::Parser parser(expr_list);
         parser();
     } catch(std::runtime_error&  ex) {
         std::cout << ex.what() << std::endl;
     }
 }
 
-int main() {
-    // ExecuteLexer();
+int main(int argc, char * argv[]) {
+    if (argc != 2)
+    {
+        std::cerr << "Usage 1: " << argv[0] << " <input file>\n";
+        return 1;
+    }
+
+    std::ostringstream out;
+
+    yyin = fopen(argv[1], "r");
+
     ExecuteParser();
+
+    for(auto &&i: expr_list){
+        Ast::genCode(i);
+    }
+
+    out << "extern printf\n"
+        << "global main\n\n"
+        << "section .data\n"
+        << "format db '%d',0\n"
+        << "formatChar db '%c',0\n"
+        << "formatString db '%s',0\n";
+
+    for (int i = 0; i < temp_index; i++) {
+        out << "temp" << std::to_string(i) << " dd 0\n";
+    }
+
+    for (int i = 0; i < char_index; i++) {
+        out << "charTemp" << std::to_string(i) << " db \"\"\n";
+    }
+
+    for (int i = 0; i < string_index; i++) {
+        out << "stringTemp" << std::to_string(i) << ": db " + msg + ", 0\n";
+    }
+
+    for (auto &&i: variables) {
+        if(i.second == "Char"){
+            out << i.first << " db \"\"\n";
+        }
+        else
+        {
+            out << i.first << " dd 0\n";
+        }
+    }
+
+    out << "\nsection .text\n\n"
+        << "main: \n";
+
+    for (auto &&i: expr_list) {
+        out << i->code << "\n";
+    }
+
+    std::cout << out.str();
 
     return 0;
 }
